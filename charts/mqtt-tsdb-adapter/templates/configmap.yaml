@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mqtt-tsdb-adapter.fullname" . }}
+  labels:
+    {{- include "mqtt-tsdb-adapter.labels" . | nindent 4 }}
+data:
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "mqttClientID") }}
+  mqttClientID: {{ .Values.global.mqttClientID }}
+  {{ else }}
+  mqttClientID: {{ .Values.mqttClientID }}
+  {{ end }}
+  tdengineHost: {{ .Release.Name }}-tdengine
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "tdengineDBName") }}
+  tdengineDBName: {{ .Values.global.tdengineDBName }}
+  {{ else }}
+  tdengineDBName: {{ .Values.tdengineDBName }}
+  {{ end }}
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "tdengineUser") }}
+  tdengineUser: {{ .Values.global.tdengineUser }}
+  {{ else }}
+  tdengineUser: {{ .Values.tdengineUser }}
+  {{ end }}
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "tdenginePass") }}
+  tdenginePass: {{ .Values.global.tdenginePass }}
+  {{ else }}
+  tdenginePass: {{ .Values.tdenginePass }}
+  {{ end }}
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "mqttTSDBAdapter") (hasKey .Values.global.mqttTSDBAdapter "mqttClientID") }}
+  mqttClientID: {{ .Values.global.mqttTSDBAdapter.mqttClientID }}
+  {{ else }}
+  mqttClientID: {{ .Values.mqttClientID }}
+  {{ end }}
+  mqttHost: {{ .Release.Name }}-mosquitto
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "mqttSubTopic") }}
+  mqttSubTopic: {{ squote .Values.global.mqttSubTopic }}
+  {{ else }}
+  mqttSubTopic: {{ squote .Values.mqttSubTopic }}
+  {{ end }}
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "mqttTSDBAdapter") (hasKey .Values.global.mqttTSDBAdapter "mqttUser") }}
+  mqttUser: {{ squote .Values.global.mqttTSDBAdapter.mqttUser }}
+  {{ else }}
+  mqttUser: {{ squote .Values.mqttUser }}
+  {{ end }}
+  {{ if and (hasKey .Values "global") (hasKey .Values.global "mqttTSDBAdapter") (hasKey .Values.global.mqttTSDBAdapter "mqttPass") }}
+  mqttPass: {{ squote .Values.global.mqttTSDBAdapter.mqttPass }}
+  {{ else }}
+  mqttPass: {{ squote .Values.mqttPass }}
+  {{ end }}
+  mosquittoPort: {{ include "mqtt-tsdb-adapter.mosquittoPort" . | quote }}
+  tdenginePort: {{ include "mqtt-tsdb-adapter.tdenginePort" . | quote }}
+  healthcheckPort: {{ include "mqtt-tsdb-adapter.healthcheckPort" . | quote }}

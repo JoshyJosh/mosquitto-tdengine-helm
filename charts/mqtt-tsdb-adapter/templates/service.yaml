@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mqtt-tsdb-adapter.fullname" . }}
+  labels:
+    {{- include "mqtt-tsdb-adapter.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: exttcp
+      protocol: TCP
+      port: {{ include "mqtt-tsdb-adapter.servicePort" . }}
+    - name: extudp
+      protocol: UDP
+      port: {{ include "mqtt-tsdb-adapter.servicePort" . }}
+    - name: healthcheck
+      protocol: TCP
+      port: {{ include "mqtt-tsdb-adapter.healthcheckPort" . }}
+  selector:
+    {{- include "mqtt-tsdb-adapter.selectorLabels" . | nindent 4 }}

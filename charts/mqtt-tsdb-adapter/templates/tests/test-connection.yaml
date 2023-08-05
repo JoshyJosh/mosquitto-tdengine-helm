@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "mqtt-tsdb-adapter.fullname" . }}-test-connection"
+  labels:
+    {{- include "mqtt-tsdb-adapter.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "mqtt-tsdb-adapter.fullname" . }}:{{ .Values.service.ports.healthcheck }}']
+  restartPolicy: Never

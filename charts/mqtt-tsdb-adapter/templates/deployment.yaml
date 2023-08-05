@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mqtt-tsdb-adapter.fullname" . }}
+  labels:
+    {{- include "mqtt-tsdb-adapter.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mqtt-tsdb-adapter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "mqtt-tsdb-adapter.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "mqtt-tsdb-adapter.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - go
+          args:
+            - run
+            - cmd/main.go
+          ports:
+            - name: http
+              containerPort: {{ include "mqtt-tsdb-adapter.healthcheckPort" . }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: http
+            failureThreshold: 100
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          env:
+            - name: TDENGINE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: tdenginePort # The key to fetch.
+            - name: TDENGINE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: tdengineHost # The key to fetch.
+            - name: TDENGINE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: tdengineUser # The key to fetch.
+            - name: TDENGINE_PASS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: tdenginePass # The key to fetch.
+            - name: TDENGINE_DBNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: tdengineDBName # The key to fetch.
+            - name: MQTT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: mosquittoPort # The key to fetch.
+            - name: MQTT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: mqttHost # The key to fetch.
+            - name: MQTT_SUB_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: mqttSubTopic # The key to fetch.
+            - name: MQTT_SUB_QOS
+              value: {{ squote .Values.mqttSubQOS }}
+            - name: MQTT_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: mqttClientID # The key to fetch.
+            - name: MQTT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: mqttUser # The key to fetch.
+              # value: {{ .Values.mqttUser }}
+            - name: MQTT_PASS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: mqttPass # The key to fetch.
+              # value: {{ .Values.mqttPass }}
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mqtt-tsdb-adapter.fullname" . }}           # The ConfigMap this value comes from.
+                  key: healthcheckPort # The key to fetch.
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
